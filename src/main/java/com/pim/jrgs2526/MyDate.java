@@ -2,9 +2,9 @@ package com.pim.jrgs2526;
 
 public class MyDate {
 
-    private int day;
-    private Months month;
-    private int year;
+    private int dayValue;
+    private Months monthValue;
+    private int yearValue;
 
     public static final String ERR_INVALID_YEAR = "Year value not valid";
     public static final String ERR_INVALID_MONTH = "Month value not valid";
@@ -12,105 +12,101 @@ public class MyDate {
     public static final String ERR_INVALID_DATE = "Invalid date";
 
     public MyDate() {
-        // Constructor por defecto sin validación
+        // Constructor sin inicializar ni validar
     }
 
     public MyDate(int day, Months month, int year) {
-        if (!isValidDate(day, month, year)) {
+        if (!isDatePossible(day, month, year)) {
             throw new IllegalArgumentException(ERR_INVALID_DATE);
         }
-        this.day = day;
-        this.month = month;
-        this.year = year;
-    }
-
-    public void setMonth(Months month) {
-        if (!isValidDate(this.day, month, this.year)) {
-            throw new IllegalArgumentException(ERR_INVALID_MONTH);
-        }
-        this.month = month;
-    }
-
-    public void setYear(int year) {
-        if (!isValidDate(this.day, this.month, year)) {
-            throw new IllegalArgumentException(ERR_INVALID_YEAR);
-        }
-        this.year = year;
-    }
-
-    public void setDay(int day) {
-        if (!isValidDate(day, this.month, this.year)) {
-            throw new IllegalArgumentException(ERR_INVALID_DAY);
-        }
-        this.day = day;
+        this.dayValue = day;
+        this.monthValue = month;
+        this.yearValue = year;
     }
 
     /**
-     * Comprueba si la combinación de día, mes y año forma una fecha válida.
+     * Cambia el día, validando con la fecha actual.
      */
-    public boolean isValidDate(int d, Months m, int y) {
-        // Reglas básicas
-        if (m == null || d <= 0 || d > 31 || y < 0) {
+    public void setDay(int newDay) {
+        ensureDate(newDay, this.monthValue, this.yearValue, ERR_INVALID_DAY);
+        this.dayValue = newDay;
+    }
+
+    /**
+     * Cambia el mes, validando la fecha resultante.
+     */
+    public void setMonth(Months newMonth) {
+        ensureDate(this.dayValue, newMonth, this.yearValue, ERR_INVALID_MONTH);
+        this.monthValue = newMonth;
+    }
+
+    /**
+     * Cambia el año actual.
+     */
+    public void setYear(int newYear) {
+        ensureDate(this.dayValue, this.monthValue, newYear, ERR_INVALID_YEAR);
+        this.yearValue = newYear;
+    }
+
+    /**
+     * Comprueba si la combinación proporcionada es válida.
+     */
+    public boolean isDatePossible(int d, Months m, int y) {
+        if (m == null || y < 0 || d <= 0) {
             return false;
         }
-
-        int maxDays = daysInMonth(m, y);
-        return d <= maxDays;
+        int max = computeMaxDays(m, y);
+        return d <= max;
     }
 
     /**
-     * Devuelve el número de días del mes indicado, teniendo en cuenta años bisiestos.
+     * Lanza excepción si la fecha no es válida.
      */
-    private int daysInMonth(Months m, int y) {
-        // Meses de 30 días
-        if (m == Months.APRIL || m == Months.JUNE ||
-                m == Months.SEPTEMBER || m == Months.NOVEMBER) {
-            return 30;
+    private void ensureDate(int d, Months m, int y, String errorMsg) {
+        if (!isDatePossible(d, m, y)) {
+            throw new IllegalArgumentException(errorMsg);
         }
-
-        // Febrero depende de si el año es bisiesto
-        if (m == Months.FEBRUARY) {
-            return isLeapYear(y) ? 29 : 28;
-        }
-
-        // El resto tienen 31
-        return 31;
     }
 
-    public boolean isLeapYear(int year) {
-        // Misma lógica, distinta forma escrita
-        boolean divisibleBy4 = (year % 4) == 0;
-        boolean divisibleBy100 = (year % 100) == 0;
-        boolean divisibleBy400 = (year % 400) == 0;
+    /**
+     * Devuelve los días máximos del mes especificado.
+     */
+    private int computeMaxDays(Months m, int y) {
 
-        return divisibleBy400 || (divisibleBy4 && !divisibleBy100);
+        switch (m) {
+            case APR:
+            case JUN:
+            case SEP:
+            case NOV:
+                return 30;
+
+            case FEB:
+                return isLeapYearAlt(y) ? 29 : 28;
+
+            default:
+                return 31;
+        }
+    }
+
+    public boolean isLeapYearAlt(int y) {
+        if (y % 400 == 0) return true;
+        if (y % 100 == 0) return false;
+        return (y % 4 == 0);
     }
 
     public enum Months {
-        JANUARY(1),
-        FEBRUARY(2),
-        MARCH(3),
-        APRIL(4),
-        MAY(5),
-        JUNE(6),
-        JULY(7),
-        AUGUST(8),
-        SEPTEMBER(9),
-        OCTOBER(10),
-        NOVEMBER(11),
-        DECEMBER(12);
+        JAN(1), FEB(2), MAR(3), APR(4), MAY(5), JUN(6),
+        JUL(7), AUG(8), SEP(9), OCT(10), NOV(11), DEC(12);
 
-        public final int monthNumber;
+        private final int code;
 
-        Months(int monthNumber) {
-            this.monthNumber = monthNumber;
+        Months(int code) {
+            this.code = code;
         }
 
-        public static Months toMonth(int monthNumber) {
-            for (Months m : Months.values()) {
-                if (m.monthNumber == monthNumber) {
-                    return m;
-                }
+        public static Months fromCode(int c) {
+            for (Months m : values()) {
+                if (m.code == c) return m;
             }
             return null;
         }
